@@ -11,6 +11,31 @@ const firestore = new Firestore({
   timestampsInSnapshots: true
 });
 
+//gets transactions of a user
+exports.activities = functions.https.onRequest((req, res) => {
+    const userId = req.query.userId;
+   
+    firestore.collection('/users').doc(userId).get()
+        .then(doc => {
+            if(doc) {
+                var transactions = [];
+                
+                doc.transactions.forEach(txn => {
+                    transactions.push(txn.id);
+                })
+                return res.status(200).send(doc.transactions);
+            } else {
+                return res.status(200).send({});
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(404).send({
+                error: 'User does not exist. '.concat(userId),
+                err
+            });    
+        })
+});
+
 //perform a send money transaction. It involves creating debit leg on the sender side and credit leg on the receiver side. The database that is updated is transactions.
 exports.sendmoney = functions.https.onRequest((req, res) => {
   const data = req.body;    
