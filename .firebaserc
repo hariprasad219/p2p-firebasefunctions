@@ -1,6 +1,7 @@
 {
   "projects": {
     "default": "helloworld-eca5d",
-    "helloworld-eca5d": "helloworld-eca5d"
+    "helloworld-eca5d": "helloworld-eca5d",
+    "pp-cxp2": "pp-cxp2"
   }
 }
