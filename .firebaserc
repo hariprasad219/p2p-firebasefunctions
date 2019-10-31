@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "helloworld-eca5d",
+    "helloworld-eca5d": "helloworld-eca5d"
+  }
+}

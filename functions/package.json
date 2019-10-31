@@ -1,0 +1,26 @@
+{
+  "name": "p2p-nextgen-functions",
+  "description": "P2P related Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase serve --only functions",
+    "shell": "firebase experimental:functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "cors": "^2.8.1",
+    "moment": "^2.17.1",
+    "firebase-admin": "~8.6.1",
+    "firebase-functions": "^3.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.12.0",
+    "eslint-plugin-promise": "^3.6.0"
+  },
+  "engines": {
+    "node": "8"
+  },
+  "private": true
+}
