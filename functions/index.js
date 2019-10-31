@@ -7,26 +7,22 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
 const firestore = new Firestore({
-  projectId: projectid,
-  timestampsInSnapshots: true
+  projectId: projectid
 });
 
 //gets transactions of a user
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
-   
-    firestore.collection('/users').doc(userId).get()
-        .then(doc => {
-            if(doc) {
-                var transactions = [];
-                
-                doc.transactions.forEach(txn => {
-                    transactions.push(txn.id);
-                })
-                return res.status(200).send(doc.transactions);
-            } else {
-                return res.status(200).send({});
-            }
+    console.log("Inside activities function");
+
+firestore.collection('users').doc(userId).collection('transactions').get()
+        .then(function(querySnapshot) {                
+            var transactionIds = [];    
+            querySnapshot.forEach(function(doc) {
+                console.log(doc.id, " => ", doc.data());
+                transactionIds.push(doc.id);
+            });
+            return res.status(200).send({result: transactionIds});
         }).catch(err => {
             console.error(err);
             return res.status(404).send({
