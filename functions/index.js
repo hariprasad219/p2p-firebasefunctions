@@ -1,22 +1,29 @@
 'use strict';
 
 const Firestore = require('@google-cloud/firestore');
-const projectid = 'pp-cxp2';
-
 const functions = require('firebase-functions');
-const PAGE_SIZE = 3;
 
+const projectid = 'pp-cxp2';
 const firestore = new Firestore({
   projectId: projectid
 });
 
+const DEFAULT_PAGE_SIZE=3;
+
 //gets transactions of a user
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
+    var pageSize = parseInt(req.query.pageSize, 10);
+    console.log("Page size: " + pageSize + "Type : " + typeof(pageSize));
+
+    if(typeof(pageSize) != "number" || Number.isNaN(pageSize)) {
+        pageSize = parseInt(DEFAULT_PAGE_SIZE, 10);
+        console.log("Page size is not set in the query params. Updated page size: " + pageSize + "Type : " + typeof(pageSize));
+    }
     
     firestore.collection('users').doc(userId)
         .collection('transactions').orderBy('timeCreated', 'desc')
-        .limit(PAGE_SIZE).get()
+        .limit(pageSize).get()
         .then(function(querySnapshot) {                
             var transactionRefs = [];
             querySnapshot.forEach(function(doc) {
