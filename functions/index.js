@@ -24,19 +24,24 @@ exports.activities = functions.https.onRequest((req, res) => {
         })
         .then(function(transactionRefs) {
             var transactionDetails = []; 
-            firestore.getAll(transactionRefs[0])
-                .then(function(querySnapshot) {
-                    console.log('Printing Transaction QueryResults');
-                    querySnapshot.forEach(function(doc) {
-                    transactionDetails.push({id: doc.id, 
-                                             payer: doc.data().payer,
-                                             amountInCents: doc.data().amountInCents,
-                                             timeCreated: doc.data().timeCreated,
-                                             payee: doc.data().payee});
-                        
-                    return res.status(200).send({results: transactionDetails});
-                });  
-            }); 
+            if(transactionRefs.length != 0) {
+                firestore.getAll(...transactionRefs)
+                    .then(function(querySnapshot) {
+                        querySnapshot.forEach(function(doc) {
+                            transactionDetails.push({
+                                 id: doc.id, 
+                                 payer: doc.data().payer,
+                                 amountInCents: doc.data().amountInCents,
+                                 timeCreated: doc.data().timeCreated,
+                                 payee: doc.data().payee,
+                                 status: doc.data().status
+                            }); 
+                        });
+                        return res.status(200).send({results: transactionDetails});
+                    });
+            } else {
+                return res.status(200).send({results: transactionDetails});
+            }
         })
         .catch(err => {
             console.error(err);
