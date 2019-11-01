@@ -4,7 +4,7 @@ const Firestore = require('@google-cloud/firestore');
 const projectid = 'pp-cxp2';
 
 const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const PAGE_SIZE = 3;
 
 const firestore = new Firestore({
   projectId: projectid
@@ -14,11 +14,14 @@ const firestore = new Firestore({
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
     
-    firestore.collection('users').doc(userId).collection('transactions').get()
+    firestore.collection('users').doc(userId)
+        .collection('transactions').orderBy('timeCreated', 'desc')
+        .limit(PAGE_SIZE).get()
         .then(function(querySnapshot) {                
             var transactionRefs = [];
             querySnapshot.forEach(function(doc) {
-                transactionRefs.push(firestore.collection('transactions').doc(doc.id));
+                transactionRefs.push(
+                    firestore.collection('transactions').doc(doc.id));
             });
             return transactionRefs;
         })
