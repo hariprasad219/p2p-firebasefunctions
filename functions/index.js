@@ -62,6 +62,53 @@ exports.activities = functions.https.onRequest((req, res) => {
         })
 });
 
+//gets contacts of a user
+exports.contacts = functions.https.onRequest((req, res) => {
+    const userId = req.query.userId;
+    var pageSize = parseInt(req.query.pageSize, 10);
+    console.log("Page size: " + pageSize + "Type : " + typeof(pageSize));
+
+    if(typeof(pageSize) != "number" || Number.isNaN(pageSize)) {
+        pageSize = parseInt(DEFAULT_PAGE_SIZE, 10);
+        console.log("Page size is not set in the query params. Updated page size: " + pageSize + "Type : " + typeof(pageSize));
+    }
+    
+    firestore.collection('users').doc(userId)
+        .collection('contacts').orderBy('id', 'desc')
+        .limit(pageSize).get()
+        .then(function(querySnapshot) {                
+            var contactRefs = [];
+            querySnapshot.forEach(function(doc) {
+                contactRefs.push(
+                    firestore.collection('users').doc(doc.id));
+            });
+            return contactRefs;
+        })
+        .then(function(contactRefs) {
+            var contactDetails = []; 
+            if(contactRefs.length != 0) {
+                firestore.getAll(...contactRefs)
+                    .then(function(querySnapshot) {
+                        querySnapshot.forEach(function(doc) {
+                            var contact = doc.data();
+                            contact.id = doc.id;
+                            contactDetails.push(contact); 
+                        });
+                        return res.status(200).send({results: contactDetails});
+                    });
+            } else {
+                return res.status(200).send({results: contactDetails});
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(404).send({
+                error: 'User does not exist. '.concat(userId),
+                err
+            });    
+        })
+});
+
 //perform a send money transaction. It involves creating debit leg on the sender side and credit leg on the receiver side. The database that is updated is transactions.
 exports.sendmoney = functions.https.onRequest((req, res) => {
   const data = req.body;    
