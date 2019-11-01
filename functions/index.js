@@ -13,34 +13,27 @@ const firestore = new Firestore({
 //gets transactions of a user
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
-    console.log("Inside activities function");
-    var transactionIds = []; 
-    var transactionRefs = [];
-    var transactionDetails = [];
     
     firestore.collection('users').doc(userId).collection('transactions').get()
         .then(function(querySnapshot) {                
-            console.log('************** Start 1 ***************');
-            console.log('Printing User Transaction ids');
+            var transactionRefs = [];
             querySnapshot.forEach(function(doc) {
-                console.log(doc.id, " => ", doc.data());
-                transactionIds.push(doc.id);
                 transactionRefs.push(firestore.collection('transactions').doc(doc.id));
             });
-            console.log('************** End 1 ***************');
             return transactionRefs;
         })
         .then(function(transactionRefs) {
-             console.log('************** Start 2 ***************');
-             firestore.getAll(transactionRefs[0])
+            var transactionDetails = []; 
+            firestore.getAll(transactionRefs[0])
                 .then(function(querySnapshot) {
                     console.log('Printing Transaction QueryResults');
                     querySnapshot.forEach(function(doc) {
-                    transactionDetails.push(doc.data());
-                    
-                    console.log("transactionIds" + JSON.stringify(transactionIds));
-                    console.log("transactionRefs" + JSON.stringify(transactionRefs));    
-                    console.log(JSON.stringify(transactionDetails))
+                    transactionDetails.push({id: doc.id, 
+                                             payer: doc.data().payer,
+                                             amountInCents: doc.data().amountInCents,
+                                             timeCreated: doc.data().timeCreated,
+                                             payee: doc.data().payee});
+                        
                     return res.status(200).send({results: transactionDetails});
                 });  
             }); 
@@ -54,11 +47,6 @@ exports.activities = functions.https.onRequest((req, res) => {
         })
 });
 
-//            firestore.getAll(transactionRefs[0]).then(querySnapshot => {
-//                console.log("Result size" + querySnapshot.size);
-//                transactionDetails = querySnapshot.docs.map(doc => doc.data());
-//            });
-
 //perform a send money transaction. It involves creating debit leg on the sender side and credit leg on the receiver side. The database that is updated is transactions.
 exports.sendmoney = functions.https.onRequest((req, res) => {
   const data = req.body;    
@@ -70,20 +58,10 @@ exports.sendmoney = functions.https.onRequest((req, res) => {
     amountInCents: data.amountInCents,
     time_created: current_timestamp,
   });
-    
-    
-    //Add the transaction to the sender side and the receiver side transactions
-   // firestore.collection('/users').doc(data.payee.id).then(doc => {
-        //if(doc && doc.exists) {
-           // doc.
-        //}
-    //})
-    //  senderRef.collection('transactions').add({id: transactionKey});
-//  receiverRef.collection('transactions').add({id: transactionKey});
-    
-var response = {
-  "message": "Successfully sent money!"
-};
+     
+    var response = {
+      "message": "Successfully sent money!"
+    };
   
  res.status(200).send(response);
 });
