@@ -60,19 +60,47 @@ exports.sendmoney = functions.https.onRequest((req, res) => {
   const data = req.body;    
   const current_timestamp = Date.now();
   
-  firestore.collection('/transactions').add({
+  console.log("current_timestamp : " + current_timestamp);
+  firestore.collection('transactions').add({
     payee: data.payee,
     payer: data.payer,
     amountInCents: data.amountInCents,
-    time_created: current_timestamp,
-  });
-     
+    timeCreated: current_timestamp,
+    status: data.status
+  }).then(function(docRef) {
+      if(data.payee && data.payee.id) {
+          firestore.collection('users').doc(data.payee.id)
+              .collection('transactions').doc(docRef.id).set({
+              id: docRef.id,
+              timeCreated: current_timestamp
+          })
+      }
+      return docRef;
+  }).then(function(docRef) {
+      if(data.payer && data.payer.id) {
+          firestore.collection('users').doc(data.payer.id)
+              .collection('transactions').doc(docRef.id).set({
+              id: docRef.id,
+              timeCreated: current_timestamp
+          })
+      }
+      return docRef;
+  }).then(function(docRef) {
     var response = {
-      "message": "Successfully sent money!"
+      "message": "Successfully sent money!",
+      "transactionId": docRef.id
     };
-  
- res.status(200).send(response);
+    console.log(response);
+    return res.status(200).send(response); 
+  }).catch(err => {
+        console.error(err);
+        return res.status(500).send({
+            error: 'Internal server error updating the message',
+            err
+        });    
+    })
 });
+        
 
 //Simple hello world function to test https
 exports.hello = functions.https.onRequest((req, res) => {
