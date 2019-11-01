@@ -14,16 +14,38 @@ const firestore = new Firestore({
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
     console.log("Inside activities function");
-
-firestore.collection('users').doc(userId).collection('transactions').get()
+    var transactionIds = []; 
+    var transactionRefs = [];
+    var transactionDetails = [];
+    
+    firestore.collection('users').doc(userId).collection('transactions').get()
         .then(function(querySnapshot) {                
-            var transactionIds = [];    
+            console.log('************** Start 1 ***************');
+            console.log('Printing User Transaction ids');
             querySnapshot.forEach(function(doc) {
                 console.log(doc.id, " => ", doc.data());
                 transactionIds.push(doc.id);
+                transactionRefs.push(firestore.collection('transactions').doc(doc.id));
             });
-            return res.status(200).send({result: transactionIds});
-        }).catch(err => {
+            console.log('************** End 1 ***************');
+            return transactionRefs;
+        })
+        .then(function(transactionRefs) {
+             console.log('************** Start 2 ***************');
+             firestore.getAll(transactionRefs[0])
+                .then(function(querySnapshot) {
+                    console.log('Printing Transaction QueryResults');
+                    querySnapshot.forEach(function(doc) {
+                    transactionDetails.push(doc.data());
+                    
+                    console.log("transactionIds" + JSON.stringify(transactionIds));
+                    console.log("transactionRefs" + JSON.stringify(transactionRefs));    
+                    console.log(JSON.stringify(transactionDetails))
+                    return res.status(200).send({results: transactionDetails});
+                });  
+            }); 
+        })
+        .catch(err => {
             console.error(err);
             return res.status(404).send({
                 error: 'User does not exist. '.concat(userId),
@@ -31,6 +53,11 @@ firestore.collection('users').doc(userId).collection('transactions').get()
             });    
         })
 });
+
+//            firestore.getAll(transactionRefs[0]).then(querySnapshot => {
+//                console.log("Result size" + querySnapshot.size);
+//                transactionDetails = querySnapshot.docs.map(doc => doc.data());
+//            });
 
 //perform a send money transaction. It involves creating debit leg on the sender side and credit leg on the receiver side. The database that is updated is transactions.
 exports.sendmoney = functions.https.onRequest((req, res) => {
