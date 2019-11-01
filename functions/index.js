@@ -14,15 +14,20 @@ const DEFAULT_PAGE_SIZE=3;
 exports.activities = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
     var pageSize = parseInt(req.query.pageSize, 10);
-    console.log("Page size: " + pageSize + "Type : " + typeof(pageSize));
+    var lastRecordTimeCreated = parseInt(req.query.lastRecordTimeCreated, 10);
 
     if(typeof(pageSize) != "number" || Number.isNaN(pageSize)) {
         pageSize = parseInt(DEFAULT_PAGE_SIZE, 10);
-        console.log("Page size is not set in the query params. Updated page size: " + pageSize + "Type : " + typeof(pageSize));
+        console.log("Page size is not set in the query params. Updated page size: " + pageSize);
+    }
+    if(typeof(lastRecordTimeCreated) != "number" || Number.isNaN(lastRecordTimeCreated)) {
+        lastRecordTimeCreated = 0; //set the time created to 0 to avoid undefined exception at start after query. 
+        console.log("Last record timestamp is not set in the query params. Updated lastRecordTimeCreated: " + lastRecordTimeCreated);
     }
     
     firestore.collection('users').doc(userId)
         .collection('transactions').orderBy('timeCreated', 'desc')
+        .startAfter(lastRecordTimeCreated)
         .limit(pageSize).get()
         .then(function(querySnapshot) {                
             var transactionRefs = [];
@@ -66,15 +71,21 @@ exports.activities = functions.https.onRequest((req, res) => {
 exports.contacts = functions.https.onRequest((req, res) => {
     const userId = req.query.userId;
     var pageSize = parseInt(req.query.pageSize, 10);
-    console.log("Page size: " + pageSize + "Type : " + typeof(pageSize));
+    var lastRecordId = req.query.lastRecordId;
 
+    console.log("Page size: " + pageSize + "Type : " + typeof(pageSize));
     if(typeof(pageSize) != "number" || Number.isNaN(pageSize)) {
         pageSize = parseInt(DEFAULT_PAGE_SIZE, 10);
         console.log("Page size is not set in the query params. Updated page size: " + pageSize + "Type : " + typeof(pageSize));
     }
+    if(!lastRecordId || typeof lastRecordId === "undefined") {
+        lastRecordId = "aaaaaaaaa";  //Setting the lowest id possible to avoid undefined exception at start at query.
+        console.log("Last record id is not set in the query params. Updated lastRecordId: " + lastRecordId);
+    }
     
     firestore.collection('users').doc(userId)
-        .collection('contacts').orderBy('id', 'desc')
+        .collection('contacts').orderBy('id', 'asc')
+        .startAfter(lastRecordId)
         .limit(pageSize).get()
         .then(function(querySnapshot) {                
             var contactRefs = [];
